@@ -12,7 +12,13 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 // ENUMS
-export const cityEnum = pgEnum('city', ['Mumbai', 'Bangalore', 'Delhi', 'Chennai', 'Other']);
+export const cityEnum = pgEnum('city', [
+  'Mumbai',
+  'Bangalore',
+  'Delhi',
+  'Chennai',
+  'Other',
+]);
 export const propertyTypeEnum = pgEnum('property_type', [
   'Apartment',
   'Villa',
@@ -22,8 +28,19 @@ export const propertyTypeEnum = pgEnum('property_type', [
 ]);
 export const bhkEnum = pgEnum('bhk', ['1', '2', '3', '4', 'Studio']);
 export const purposeEnum = pgEnum('purpose', ['Buy', 'Rent']);
-export const timelineEnum = pgEnum('timeline', ['0-3m', '3-6m', '>6m', 'Exploring']);
-export const sourceEnum = pgEnum('source', ['Website', 'Referral', 'Walk-in', 'Call', 'Other']);
+export const timelineEnum = pgEnum('timeline', [
+  '0-3m',
+  '3-6m',
+  '>6m',
+  'Exploring',
+]);
+export const sourceEnum = pgEnum('source', [
+  'Website',
+  'Referral',
+  'Walk-in',
+  'Call',
+  'Other',
+]);
 export const statusEnum = pgEnum('status', [
   'New',
   'Qualified',
@@ -79,10 +96,14 @@ export const insertBuyerSchema = createInsertSchema(buyers, {
   notes: z.string().max(1000).optional(),
   tags: z.array(z.string()).default([]),
 })
-  .refine((data) => !data.budgetMax || !data.budgetMin || data.budgetMax >= data.budgetMin, {
-    message: 'Budget max must be >= budget min',
-    path: ['budgetMax'],
-  })
+  .refine(
+    (data) =>
+      !data.budgetMax || !data.budgetMin || data.budgetMax >= data.budgetMin,
+    {
+      message: 'Budget max must be >= budget min',
+      path: ['budgetMax'],
+    },
+  )
   .refine(
     (data) => {
       const needsBhk = ['Apartment', 'Villa'].includes(data.propertyType);

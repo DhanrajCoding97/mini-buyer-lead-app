@@ -222,7 +222,15 @@
     "public.status": {
       "name": "status",
       "schema": "public",
-      "values": ["New", "Qualified", "Contacted", "Visited", "Negotiation", "Converted", "Dropped"]
+      "values": [
+        "New",
+        "Qualified",
+        "Contacted",
+        "Visited",
+        "Negotiation",
+        "Converted",
+        "Dropped"
+      ]
     },
     "public.timeline": {
       "name": "timeline",
