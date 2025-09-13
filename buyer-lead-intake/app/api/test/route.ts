@@ -7,9 +7,7 @@ export async function GET() {
     const result = await db.select().from(buyers).limit(1);
     return NextResponse.json({ success: true, count: result.length });
   } catch (error) {
-    if (error instanceof Error) {
-      return NextResponse.json({ error: error.message });
-    }
-    return NextResponse.json({ error: String(error) });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }
