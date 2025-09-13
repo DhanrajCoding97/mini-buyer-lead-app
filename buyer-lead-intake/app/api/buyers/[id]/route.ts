@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { buyers, insertBuyerSchema } from '@/drizzle/schema';
 import { eq } from 'drizzle-orm';
-import { errorMonitor } from 'events';
 
 //Get route to fetch single buyer
 export async function GET(
@@ -21,6 +20,7 @@ export async function GET(
     }
     return NextResponse.json(buyer);
   } catch (error) {
+    console.error('Error fetching buyer:', error);
     return NextResponse.json(
       { error: 'Failed to fetch buyer' },
       { status: 500 },
@@ -53,7 +53,6 @@ export async function PUT(
   }
 }
 
-//DELETE route to delete buyer
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } },
@@ -68,8 +67,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Buyer not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ message: 'Buyer deleted successfully' });
+    return NextResponse.json({
+      message: 'Buyer deleted successfully',
+      deletedBuyer, // Return the deleted buyer data
+    });
   } catch (error) {
+    console.error('Error deleting buyer:', error);
     return NextResponse.json(
       { error: 'Failed to delete buyer' },
       { status: 500 },
