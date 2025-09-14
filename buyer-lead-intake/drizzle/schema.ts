@@ -89,7 +89,7 @@ export const selectBuyerSchema = createSelectSchema(buyers); // Move this UP
 
 export const insertBuyerSchema = createInsertSchema(buyers, {
   fullName: z.string().min(2).max(80),
-  email: z.string().email().optional().or(z.literal('')),
+  email: z.string().email().optional().or(z.literal('')), 
   phone: z.string().regex(/^\d{10,15}$/, 'Phone must be 10-15 digits'),
   budgetMin: z.number().positive().optional(),
   budgetMax: z.number().positive().optional(),
@@ -105,12 +105,12 @@ export const insertBuyerSchema = createInsertSchema(buyers, {
     },
   )
   .refine(
-    (data) => {
-      const needsBhk = ['Apartment', 'Villa'].includes(data.propertyType);
-      return !needsBhk || data.bhk;
-    },
-    { message: 'BHK required for Apartment/Villa', path: ['bhk'] },
-  );
+  (data) => {
+    const needsBhk = ['Apartment', 'Villa'].includes(data.propertyType);
+    return !needsBhk || data.bhk;
+  },
+  { message: 'BHK required for Apartment/Villa', path: ['bhk'] }
+)
 
 // Types - Now these can reference the schemas above
 export type Buyer = z.infer<typeof selectBuyerSchema>;
