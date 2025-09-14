@@ -2,7 +2,7 @@
 import { useActionState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBuyer } from '@/app/actions/buyers';
-import {cn} from '@/lib/tailwindcn';
+import { cn } from '@/lib/utils';
 export default function NewBuyerPage() {
 	// const [state, formAction] = useFormState(createBuyer, null);
 	const [state, formAction] = useActionState(createBuyer, null);
