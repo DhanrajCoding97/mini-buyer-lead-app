@@ -1,98 +1,119 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { useForm,UseFormReturn } from "react-hook-form"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
 import { buyerFormSchema, type BuyerFormValues } from "@/lib/validations/buyer"
-import { createBuyer } from "@/app/actions/buyers"
-import { useState } from "react"
+import { useRouter } from "next/navigation"
 
-export default function NewBuyerPage() {
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const router = useRouter()
-  
-  const form = useForm<BuyerFormValues>({
+// interface BuyerFormProps {
+//   mode: "new" | "edit"
+//   onSubmit: (values: BuyerFormValues) => Promise<void>
+//   defaultValues?: Partial<BuyerFormValues>
+//   isSubmitting?: boolean
+// }
+
+// export const createDefaultBuyerFormValues = (overrides?: Partial<BuyerFormValues>): BuyerFormValues => ({
+//   fullName: "",
+//   email: undefined,
+//   phone: "",
+//   city: "Chandigarh", // Set a reasonable default
+//   propertyType: "Apartment", // Set a reasonable default
+//   bhk: undefined,
+//   purpose: "Buy", // Set a reasonable default
+//   timeline: "0-3m", // Set a reasonable default
+//   source: "Website", // Set a reasonable default
+//   budgetMin: undefined,
+//   budgetMax: undefined,
+//   notes: undefined,
+//   tags: [],
+//   status: "New",
+//   id: undefined,
+//   ownerId: undefined,
+//   updatedAt: undefined,
+//   ...overrides,
+// });
+
+
+// export function BuyerForm({
+//   mode,
+//   onSubmit,
+//   defaultValues,
+//   isSubmitting,
+// }: BuyerFormProps) {
+//   const form = useForm<BuyerFormValues>({
+//     resolver: zodResolver(buyerFormSchema),
+// 		defaultValues: createDefaultBuyerFormValues(defaultValues),
+//   })
+
+	interface BuyerFormProps {
+		mode: "new" | "edit"
+		onSubmit: (values: BuyerFormValues) => Promise<void>
+		defaultValues?: Partial<BuyerFormValues>
+		isSubmitting?: boolean
+	}
+
+	const createDefaultBuyerFormValues = (overrides?: Partial<BuyerFormValues>): BuyerFormValues => ({
+		fullName: "",
+		email: undefined,
+		phone: "",
+		city: "Chandigarh",
+		propertyType: "Apartment", 
+		bhk: undefined,
+		purpose: "Buy",
+		timeline: "0-3m",
+		source: "Website",
+		budgetMin: undefined,
+		budgetMax: undefined,
+		notes: undefined,
+		tags: [],
+		status: "New",
+		id: undefined,
+		ownerId: undefined,
+		updatedAt: undefined,
+		...overrides,
+	});
+	export function BuyerForm({
+  mode,
+  onSubmit,
+  defaultValues,
+  isSubmitting,
+	}: BuyerFormProps) {
+  // Explicitly type the form without any generics
+  const form: UseFormReturn<BuyerFormValues> = useForm<BuyerFormValues>({
     resolver: zodResolver(buyerFormSchema),
-    // defaultValues: {
-    //   fullName: "",
-    //   email: "",
-    //   phone: "",
-    //   city: undefined,
-    //   propertyType: undefined,
-    //   bhk: undefined,
-    //   purpose: undefined,
-    //   timeline: undefined,
-    //   source: undefined,
-		// 	budgetMin: undefined,
-		// 	budgetMax: undefined,
-    //   notes: "",
-    //   tags: "",
-    // },
-     defaultValues: {
-      fullName: "",
-      email: "",
-      phone: "",
-      city: undefined as any, // Cast to satisfy TypeScript
-      propertyType: undefined as any,
-      bhk: undefined,
-      purpose: undefined as any,
-      timeline: undefined as any,
-      source: undefined as any,
-      budgetMin: undefined,
-      budgetMax: undefined,
-      notes: undefined,
-      tags: []
-    },
+    defaultValues: createDefaultBuyerFormValues(defaultValues),
   })
 
-  async function onSubmit(values: BuyerFormValues) {
-    setIsSubmitting(true)
-    
-    // Convert form data to FormData for server action
-    const formData = new FormData()
-    Object.entries(values).forEach(([key, value]) => {
-      if (value !== undefined && value !== "") {
-        if (key === "budgetMin" || key === "budgetMax") {
-          formData.append(key, value.toString())
-        } else {
-          formData.append(key, value as string)
-        }
-      }
-    })
-
-    try {
-      const result = await createBuyer(null, formData)
-      
-      if (result?.errors) {
-        // Set form errors
-        Object.entries(result.errors).forEach(([field, message]) => {
-          form.setError(field as keyof BuyerFormValues, { message })
-        })
-      } else if (result?.success) {
-        router.push("/buyers")
-      } else if (result?.error) {
-        form.setError("root", { message: result.error })
-      }
-    } catch (error) {
-      form.setError("root", { message: "Something went wrong" })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+  const router = useRouter()
 
   const propertyTypeValue = form.watch("propertyType")
   const needsBhk = ["Apartment", "Villa"].includes(propertyTypeValue || "")
 
   return (
     <div className="container mx-auto p-6 max-w-5xl">
-    	<h1 className="text-2xl text-center font-bold text-black mb-6">Add New Lead</h1>
-      
-			<Form {...form}>
+      <h1 className="text-2xl text-center font-bold text-black mb-6">
+        {mode === "new" ? "New Lead Form" : "Edit Lead"}
+      </h1>
+
+            <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="bg-white/80 border border-black/20 shadow-lg rounded-lg p-6 flex flex-col gap-2">
           {form.formState.errors.root && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -163,17 +184,17 @@ export default function NewBuyerPage() {
                   <FormLabel className="text-black">
                     City <span className="text-red-800">*</span>
                   </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select City" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Mumbai">Chandigarh</SelectItem>
-                      <SelectItem value="Bangalore">Mohali</SelectItem>
-                      <SelectItem value="Delhi">Zirakpur</SelectItem>
-                      <SelectItem value="Chennai">Panchkula</SelectItem>
+                      <SelectItem value="Chandigarh">Chandigarh</SelectItem>
+                      <SelectItem value="Mohali">Mohali</SelectItem>
+                      <SelectItem value="Zirakpur">Zirakpur</SelectItem>
+                      <SelectItem value="Panchkula">Panchkula</SelectItem>
                       <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
@@ -191,7 +212,7 @@ export default function NewBuyerPage() {
                   <FormLabel className="text-black">
                     Source <span className="text-red-800">*</span>
                   </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select Source" />
@@ -222,7 +243,7 @@ export default function NewBuyerPage() {
                   <FormLabel className="text-black">
                     Property Type <span className="text-red-800">*</span>
                   </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select Type" />
@@ -250,7 +271,7 @@ export default function NewBuyerPage() {
                   <FormLabel className="text-black">
                     BHK {needsBhk && <span className="text-red-800">*</span>}
                   </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select BHK" />
@@ -281,7 +302,7 @@ export default function NewBuyerPage() {
                   <FormLabel className="text-black">
                     Purpose <span className="text-red-800">*</span>
                   </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select Purpose" />
@@ -306,7 +327,7 @@ export default function NewBuyerPage() {
                   <FormLabel className="text-black">
                     Timeline <span className="text-red-800">*</span>
                   </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select Timeline" />
@@ -334,15 +355,16 @@ export default function NewBuyerPage() {
                 <FormItem className="min-w-0">
                   <FormLabel className="text-black">Min Budget (₹)</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
+                    <Input
+                      type="number"
                       placeholder="500000"
                       {...field}
-											onChange={(e) => {
-												const value = e.target.value;
-												field.onChange(value === '' ? undefined : Number(value));
-                      }}
-                      className="w-full"
+                    	value={field.value ?? ""} 
+                    	onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === "" ? undefined : Number(value));
+                    	}}
+                    	className="w-full"
                     />
                   </FormControl>
                    <div className="min-h-[1.2rem]">
@@ -358,17 +380,17 @@ export default function NewBuyerPage() {
                 <FormItem className="min-w-0">
                   <FormLabel className="text-black">Max Budget (₹)</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      placeholder="8000000"
-                      {...field}
-                      // onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-											onChange={(e) => {
-												const value = e.target.value;
-												field.onChange(value === '' ? undefined : Number(value));
-											}}
-                      className="w-full"
-                    />
+                    <Input
+  										type="number"
+  										placeholder="500000"
+  										{...field}
+  										value={field.value ?? ""}  
+  										onChange={(e) => {
+  										  const value = e.target.value;
+  										  field.onChange(value === "" ? undefined : Number(value));
+  										}}
+  										className="w-full"
+										/>
                   </FormControl>
                    <div className="min-h-[1.2rem]">
                     <FormMessage />
@@ -385,7 +407,7 @@ export default function NewBuyerPage() {
               <FormItem>
                 <FormLabel className="text-black">Notes</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Any additional notes..." {...field} />
+                  <Textarea placeholder="Any additional notes..." {...field} value={field.value ?? ""} />
                 </FormControl>
                  <div className="min-h-[1.2rem]">
                   <FormMessage />
@@ -401,7 +423,18 @@ export default function NewBuyerPage() {
               <FormItem>
                 <FormLabel className="text-black">Tags (comma separated)</FormLabel>
                 <FormControl>
-                  <Input placeholder="urgent, vip, callback" {...field} />
+                  <Input 
+										placeholder="urgent, vip, callback" 
+										value={field.value?.join(", ") || ""}
+										onChange={(e) => {
+											const value = e.target.value;
+											const tagsArray = value
+												.split(",")
+												.map(tag => tag.trim())
+												.filter(tag => tag.length > 0);
+											field.onChange(tagsArray);
+										}}
+									/>
                 </FormControl>
                  <div className="min-h-[1.2rem]">
                   <FormMessage />
@@ -410,15 +443,18 @@ export default function NewBuyerPage() {
             )}
           />
 					<div className="flex items-center justify-center gap-5">
-						<Button className="max-w-[200px]" type="submit" disabled={isSubmitting}>
-							{isSubmitting ? "Creating..." : "Create Lead"}
-						</Button>
-							<Button type="button" variant="link" className="max-w-[200p]" onClick={() => router.push("/buyers")}>
-							Go Back
-						</Button>
-					</div>
+          	<Button className="max-w-[200px]" type="submit" disabled={isSubmitting}>
+              {isSubmitting 
+    						? (mode === "new" ? "Creating..." : "Updating...")
+    						: (mode === "new" ? "Create Lead" : "Update Lead")
+  						}
+           	</Button>
+            <Button type="button" variant="link" className="max-w-[200p]" onClick={() => router.push("/buyers")}>
+              Go Back
+          	</Button>
+          </div>
         </form>
-    	</Form>
+        </Form>
     </div>
   )
 }

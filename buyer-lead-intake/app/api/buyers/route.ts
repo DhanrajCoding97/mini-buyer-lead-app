@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { buyers, insertBuyerSchema } from '@/drizzle/schema';
 import { eq, like, or, desc, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { createClient } from '@/lib/supabase/server';
 import {
   cityEnum,
   propertyTypeEnum,
@@ -11,8 +12,19 @@ import {
 } from '@/drizzle/schema';
 import { parseEnumParam } from '@/helpers/enumHelper';
 
+async function getCurrentUser() {
+  const supabase = await createClient();
+  const { data: { user }, error } = await supabase.auth.getUser();
+  return error ? null : user;
+}
+
 export async function GET(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
 
     // Pagination
@@ -118,14 +130,30 @@ export async function GET(request: NextRequest) {
 //POST - Create new Buyer
 export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
 
     const validated = insertBuyerSchema.parse({
       ...body,
-      ownerId: uuidv4(),
+      ownerId: user.id,
     });
 
     const [newBuyer] = await db.insert(buyers).values(validated).returning();
+
+    // Create history entry
+    await db.insert(buyerHistory).values({
+      buyerId: newBuyer.id,
+      changedBy: user.id,
+      diff: { 
+        action: 'created', 
+        changes: validated,
+        user: user.email || 'Unknown'
+      },
+    });
 
     return NextResponse.json(newBuyer, { status: 201 });
   } catch (error) {

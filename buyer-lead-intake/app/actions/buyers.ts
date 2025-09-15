@@ -5,13 +5,22 @@ import { buyers, buyerHistory, insertBuyerSchema } from '@/drizzle/schema';
 import { revalidatePath } from 'next/cache';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
+import { createClient } from '@/lib/supabase/server';
 
 export async function createBuyer(prevState: any, formData: FormData) {
+
+  const supabase = await createClient();
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    return { error: 'You must be logged in to create a buyer' };
+  }
+
   const rawData = {
     fullName: formData.get('fullName') as string,
     email: (formData.get('email') as string) || undefined,
     phone: formData.get('phone') as string,
-    city: formData.get('city') as string,
+    city: formData.get('city') as string, 
     propertyType: formData.get('propertyType') as string,
     bhk: formData.get('bhk') as string, // Keep as string initially
     purpose: formData.get('purpose') as string,
@@ -60,13 +69,18 @@ export async function createBuyer(prevState: any, formData: FormData) {
 
     const [newBuyer] = await db.insert(buyers).values({
       ...validated,
-      ownerId: uuidv4(),
+      ownerId: user.id,
     }).returning();
 
+    // Create history entry
     await db.insert(buyerHistory).values({
       buyerId: newBuyer.id,
-      changedBy: uuidv4(),
-      diff: { action: 'created', data: validated },
+      changedBy: user.id,
+      diff: { 
+        action: 'created', 
+        changes: validated,
+        user: user.email || 'Unknown'
+      },
     });
 
     revalidatePath('/buyers');
