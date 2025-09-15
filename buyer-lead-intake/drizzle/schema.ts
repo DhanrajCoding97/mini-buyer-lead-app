@@ -89,7 +89,7 @@ export const selectBuyerSchema = createSelectSchema(buyers); // Move this UP
 
 export const insertBuyerSchema = createInsertSchema(buyers, {
   fullName: z.string().min(2).max(80),
-  email: z.string().email().optional().or(z.literal('')), 
+  email: z.email().optional().or(z.literal('')),
   phone: z.string().regex(/^\d{10,15}$/, 'Phone must be 10-15 digits'),
   budgetMin: z.number().positive().optional(),
   budgetMax: z.number().positive().optional(),

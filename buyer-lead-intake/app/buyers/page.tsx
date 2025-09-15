@@ -2,6 +2,7 @@ import {db} from '@/lib/db';
 import {buyers} from '@/drizzle/schema';
 import {desc} from 'drizzle-orm';
 import Link from 'next/link';
+import { LogoutButton } from '@/components/logoutButton';
 
 export default async function BuyersPage(){
     const buyersList = await db
@@ -13,13 +14,16 @@ export default async function BuyersPage(){
     return(
         <div className="container mx-auto p-6">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-white">Buyer Leads ({buyersList.length})</h1>
-                <Link 
-                href="/buyers/new"
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                >
-                Add New Lead
-                </Link>
+                <h1 className="text-2xl font-bold text-black">Buyer Leads ({buyersList.length})</h1>
+                <div className="flex items-center gap-4">
+                    <Link 
+                    href="/buyers/new"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                    >
+                    Add New Lead
+                    </Link>
+                    <LogoutButton/>
+                </div>
             </div>
       
             {buyersList.length === 0 ? (
