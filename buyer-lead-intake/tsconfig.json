@@ -28,6 +28,6 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "dribble.config.js"
-  ],
+, "lib/twmerge.js"  ],
   "exclude": ["node_modules"]
 }
