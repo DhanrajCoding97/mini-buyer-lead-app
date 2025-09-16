@@ -57,7 +57,15 @@ export default function BuyerPage({ params }: { params: Promise<{ id: string }> 
     fetchBuyer()
   }, [id])
 
-  if (loading) return <p className="text-center mt-6">Loading...</p>;
+  if (loading)   {
+    return  (
+      <div className="min-h-screen flex justify-center items-center py-12">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        <span className="ml-3 text-muted-foreground">Loading Buyer Information</span>
+      </div>
+    );
+  }
+
   if (!buyer) return <p className="text-center mt-6">Buyer not found</p>;
 
 	const handleDelete = async () => {

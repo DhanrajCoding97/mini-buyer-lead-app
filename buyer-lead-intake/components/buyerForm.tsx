@@ -56,7 +56,6 @@ export function BuyerForm({
   defaultValues,
   isSubmitting,
 	}: BuyerFormProps) {
-  // Use different schemas based on mode
   const schema = mode === "new" ? newBuyerFormSchema : buyerFormSchema
   const form = useForm({
     resolver: zodResolver(schema),
@@ -102,7 +101,6 @@ export function BuyerForm({
                 <FormControl>
                   <Input placeholder="Enter full name" {...field} />
                 </FormControl>
-                {/* Reserve space for error message */}
                  <div className="min-h-[1.2rem]">
                   <FormMessage />
                 </div>
@@ -401,7 +399,6 @@ export function BuyerForm({
 											setTagsInput(value);
 										}}
 										onBlur={(e) => {
-											// Convert to array when field loses focus
 											const value = e.target.value;
 											const tagsArray = value
 												.split(",")
