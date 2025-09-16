@@ -124,7 +124,7 @@ export default function BuyerPage({ params }: { params: Promise<{ id: string }> 
               <p className="text-gray-600">Complete details and preferences</p>
             </div>
       
-            <div className="grid gap-6">
+            <div className="grid gap-6 border border-black/20 rounded-lg p-2">
               {/* Header Card with Name and Status */}
               <Card className="border-0 shadow-sm">
                 <CardHeader className="pb-4">
@@ -310,20 +310,16 @@ export default function BuyerPage({ params }: { params: Promise<{ id: string }> 
               </Card>
       
               {/* Action Buttons */}
-              <Card className="border-0 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex gap-3 justify-end">
-                    <Button variant="outline" onClick={() => setEditMode(true)} className="flex items-center gap-2">
-                      <Edit className="w-4 h-4" />
-                      Edit Information
-                    </Button>
-                    <Button variant="destructive" onClick={handleDelete} className="flex items-center gap-2">
-                      <Trash2 className="w-4 h-4" />
-                      Delete Buyer
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex gap-3 justify-end pb-2">
+                <Button variant="outline" onClick={() => setEditMode(true)} className="flex items-center gap-2">
+                  <Edit className="w-4 h-4" />
+                  Edit Information
+                </Button>
+                <Button variant="destructive" onClick={handleDelete} className="flex items-center gap-2">
+                  <Trash2 className="w-4 h-4" />
+                  Delete Buyer
+                </Button>
+              </div>
             </div>
           </div>
           )
