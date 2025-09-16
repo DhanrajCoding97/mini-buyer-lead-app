@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Search, Plus, Phone, MapPin, Home, Calendar, DollarSign, Eye, Upload, Download, Loader2 } from "lucide-react"
-import { toast } from "sonner" // Optional: for better UX
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Search, Plus, Phone, MapPin, Home, Calendar, DollarSign, Eye, Upload, Download, Loader2, ChevronDown, AlertCircle, Check } from "lucide-react"
+import { toast } from "sonner"
 
 type Buyer = {
   id: string
@@ -63,6 +64,7 @@ export default function BuyersPage() {
   const [propertyTypes, setPropertyTypes] = useState<string[]>([])
   const [statuses, setStatuses] = useState<string[]>([])
   const [timelines, setTimelines] = useState<string[]>([])
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null)
 
   // Fetch filter options
   useEffect(() => {
@@ -131,6 +133,50 @@ export default function BuyersPage() {
     fetchBuyers()
   }, [page, debouncedSearch, city, propertyType, status, timeline, sort])
 
+  // Handle status update
+  const handleStatusUpdate = async (buyerId: string, newStatus: string, currentUpdatedAt: string) => {
+    setUpdatingStatus(buyerId)
+    try {
+      const response = await fetch(`/api/buyers/${buyerId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus,
+          updatedAt: currentUpdatedAt
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        if (response.status === 429) {
+          toast.error(`Rate limit exceeded. Try again in ${error.retryAfter} seconds.`)
+          return
+        }
+        throw new Error(error.error || 'Failed to update status')
+      }
+
+      const updatedBuyer = await response.json()
+      
+      // Update the buyer in the local state
+      setBuyers(prevBuyers => 
+        prevBuyers.map(buyer => 
+          buyer.id === buyerId 
+            ? { ...buyer, status: newStatus, updatedAt: updatedBuyer.updatedAt }
+            : buyer
+        )
+      )
+      
+      toast.success(`Status updated to "${newStatus}"`)
+    } catch (error) {
+      console.error('Failed to update status:', error)
+      toast.error('Failed to update status. Please try again.')
+    } finally {
+      setUpdatingStatus(null)
+    }
+  }
+
   // Handle CSV import
   const handleImport = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -159,9 +205,9 @@ export default function BuyersPage() {
       
       if (data.results?.errors > 0) {
         console.log("Import errors:", data.results.errorDetails)
-        alert(`Import completed with ${data.results.errors} errors. Check console for details.`)
+        toast.error(`Import completed with ${data.results.errors} errors. Check console for details.`)
       } else {
-        alert(`CSV imported successfully! ${data.results?.imported || 0} records imported.`)
+        toast.success(`CSV imported successfully! ${data.results?.imported || 0} records imported.`)
       }
       
       // Clear the file input
@@ -177,7 +223,7 @@ export default function BuyersPage() {
       
     } catch (error) {
       console.error("Import failed:", error)
-      alert("Failed to import CSV. Please try again.")
+      toast.error("Failed to import CSV. Please try again.")
     } finally {
       setImporting(false)
     }
@@ -195,6 +241,63 @@ export default function BuyersPage() {
     } catch (error) {
       console.error("Failed to fetch filters:", error)
     }
+  }
+
+  // Status color mapping for better UI
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'new': return 'bg-blue-300 text-blue-800 border-blue-200'
+      case 'qualified': return 'bg-green-300 text-green-800 border-green-200'
+      case 'contacted': return 'bg-yellow-300 text-yellow-800 border-yellow-200'
+      case 'visited': return 'bg-purple-300 text-purple-800 border-purple-200'
+      case 'negotiation': return 'bg-teal-400 text-gray-800 border-gray-200'
+      case 'converted': return 'bg-gray-300 text-gray-800 border-gray-200'
+      case 'dropped': return 'bg-red-300 text-gray-800 border-red-200'
+      default: return 'bg-gray-300 text-gray-800 border-gray-200'
+    }
+  }
+
+  // Status Quick Action Component
+  const StatusQuickAction = ({ buyer }: { buyer: Buyer }) => {
+    const isUpdating = updatingStatus === buyer.id
+    
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-auto p-1"
+            disabled={isUpdating}
+          >
+            {isUpdating ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Badge className={`${getStatusColor(buyer.status)} cursor-pointer hover:opacity-80`}>
+                {buyer.status}
+                <ChevronDown className="h-3 w-3 ml-1" />
+              </Badge>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {statuses
+            .filter(s => s !== buyer.status)
+            .map((statusOption) => (
+              <DropdownMenuItem
+                key={statusOption}
+                onClick={() => handleStatusUpdate(buyer.id, statusOption, buyer.updatedAt)}
+                className="cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${getStatusColor(statusOption).split(' ')[0]}`} />
+                  {statusOption}
+                </div>
+              </DropdownMenuItem>
+            ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
   }
 
   return (
@@ -459,7 +562,7 @@ export default function BuyersPage() {
                           </td>
                           <td className="p-4 text-muted-foreground">{buyer.timeline || "-"}</td>
                           <td className="p-4">
-                            <Badge variant="default">{buyer.status}</Badge>
+                            <StatusQuickAction buyer={buyer} />
                           </td>
                           <td className="p-4 text-muted-foreground text-sm">{new Date(buyer.updatedAt).toLocaleDateString()}</td>
                           <td className="p-4">
@@ -491,7 +594,7 @@ export default function BuyersPage() {
                           {buyer.city && <div className="flex items-center gap-1"><MapPin className="h-3 w-3" />{buyer.city}</div>}
                         </div>
                       </div>
-                      <Badge variant="default">{buyer.status}</Badge>
+                      <StatusQuickAction buyer={buyer} />
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-sm mb-4">
                       {buyer.propertyType && <div className="flex items-center gap-2"><Home className="h-4 w-4 text-muted-foreground" />{buyer.propertyType}</div>}

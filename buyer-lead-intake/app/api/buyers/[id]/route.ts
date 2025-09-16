@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { buyers,buyerHistory, insertBuyerSchema } from '@/drizzle/schema';
+import { buyers, buyerHistory, insertBuyerSchema } from '@/drizzle/schema';
 import { createClient } from '@/lib/supabase/server';
 import { eq } from 'drizzle-orm';
+import { updateRateLimiter, getClientIdentifier } from '@/lib/rateLimiter';
 
 async function getCurrentUser() {
   const supabase = await createClient();
@@ -43,31 +44,7 @@ export async function GET(
   }
 }
 
-// export async function PUT(
-//   request: NextRequest,
-//   { params }: { params: { id: string } },
-// ) {
-//   try {
-//     const body = await request.json();
-
-//     const validated = insertBuyerSchema.partial().parse(body);
-
-//     const [updatedBuyer] = await db
-//       .update(buyers)
-//       .set({ ...validated, updatedAt: new Date() })
-//       .where(eq(buyers.id, params.id))
-//       .returning();
-
-//     if (!updatedBuyer) {
-//       return NextResponse.json({ error: 'Buyer not found' }, { status: 404 });
-//     }
-//     return NextResponse.json(updatedBuyer);
-//   } catch (error) {
-//     const message = error instanceof Error ? error.message : 'Unknown error';
-//     return NextResponse.json({ error: message }, { status: 400 });
-//   }
-// }
-
+//PUT route to update a buyer
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
@@ -76,6 +53,29 @@ export async function PUT(
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Rate limiting check
+    const clientId = getClientIdentifier(request, user.id);
+    if (updateRateLimiter.isRateLimited(clientId)) {
+      const resetTime = updateRateLimiter.getResetTime(clientId);
+      const resetTimeSeconds = Math.ceil((resetTime - Date.now()) / 1000);
+      
+      return NextResponse.json(
+        { 
+          error: 'Too many requests. Please try again later.',
+          retryAfter: resetTimeSeconds
+        }, 
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': resetTimeSeconds.toString(),
+            'X-RateLimit-Limit': '10',
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': resetTime.toString()
+          }
+        }
+      );
     }
 
     const { id } = await context.params;
@@ -137,81 +137,24 @@ export async function PUT(
       });
     }
 
-    return NextResponse.json(updatedBuyer);
+    // Add rate limit headers to successful response
+    const remaining = updateRateLimiter.getRemainingRequests(clientId);
+    const resetTime = updateRateLimiter.getResetTime(clientId);
+
+    return NextResponse.json(updatedBuyer, {
+      headers: {
+        'X-RateLimit-Limit': '10',
+        'X-RateLimit-Remaining': remaining.toString(),
+        'X-RateLimit-Reset': resetTime.toString()
+      }
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
 
-
-// export async function DELETE(
-//   request: NextRequest,
-//   { params }: { params: { id: string } },
-// ) {
-//   try {
-//     const [deletedBuyer] = await db
-//       .delete(buyers)
-//       .where(eq(buyers.id, params.id))
-//       .returning();
-
-//     if (!deletedBuyer) {
-//       return NextResponse.json({ error: 'Buyer not found' }, { status: 404 });
-//     }
-
-//     return NextResponse.json({
-//       message: 'Buyer deleted successfully',
-//       deletedBuyer, // Return the deleted buyer data
-//     });
-//   } catch (error) {
-//     console.error('Error deleting buyer:', error);
-//     return NextResponse.json(
-//       { error: 'Failed to delete buyer' },
-//       { status: 500 },
-//     );
-//   }
-// }
-
-// export async function DELETE(
-//   request: NextRequest,
-//   context: { params: Promise<{ id: string }> },
-// ) {
-//   try {
-//     const user = await getCurrentUser();
-//     if (!user) {
-//       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-//     }
-
-//     const {id} = await context.params;
-
-//     // Check ownership before deleting
-//     const [currentBuyer] = await db
-//       .select()
-//       .from(buyers)
-//       .where(eq(buyers.id, id))
-//       .limit(1);
-
-//     if (!currentBuyer) {
-//       return NextResponse.json({ error: 'Buyer not found' }, { status: 404 });
-//     }
-
-//     if (currentBuyer.ownerId !== user.id) {
-//       return NextResponse.json({ error: 'You can only delete your own leads' }, { status: 403 });
-//     }
-
-//     const [deletedBuyer] = await db
-//       .delete(buyers)
-//       .where(eq(buyers.id, id))
-//       .returning();
-
-//     return NextResponse.json({
-//       message: 'Buyer deleted successfully',
-//       deletedBuyer,
-//     });
-//   } catch (error) {
-//     return NextResponse.json({ error: 'Failed to delete buyer' }, { status: 500 });
-//   }
-// }
+//DELETE route to delete a buyer
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
