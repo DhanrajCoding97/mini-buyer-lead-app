@@ -63,11 +63,19 @@ export function BuyerForm({
   })
 
   const [tagsInput, setTagsInput] = useState("")
-
-  const handleSubmit = async (values: any) => {
-    console.log("BuyerForm handleSubmit called with:", values);
+  // const handleSubmit = async (values: BuyerFormValues): Promise<void> => {
+  //   try {
+  //     console.log("BuyerForm handleSubmit called with:", values);
+  //     await onSubmit(values);
+  //   } catch (error) {
+  //     console.error("Error submitting buyer form:", error);
+  //   }
+  // };
+  const handleSubmit = async (
+    values: BuyerFormValues | NewBuyerFormValues
+  ): Promise<void> => {
     await onSubmit(values);
-  }
+  };
 
   const router = useRouter()
 

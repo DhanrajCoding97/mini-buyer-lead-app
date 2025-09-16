@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState, useEffect,useCallback  } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { LogoutButton } from "@/components/logoutButton"
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Search, Plus, Phone, MapPin, Home, Calendar, DollarSign, Eye, Upload, Download, Loader2, ChevronDown, AlertCircle, Check } from "lucide-react"
+import { Search, Plus, Phone, MapPin, Home, Calendar, DollarSign, Eye, Upload, Download, Loader2, ChevronDown } from "lucide-react"
 import { toast } from "sonner"
 
 type Buyer = {
@@ -102,36 +102,66 @@ export default function BuyersPage() {
     router.replace(`/buyers?${params.toString()}`)
   }, [page, debouncedSearch, city, propertyType, status, timeline, sort, router])
 
-  // Fetch buyers function - extracted for reuse
-  const fetchBuyers = async () => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        pageSize: "10",
-        search: debouncedSearch,
-        city,
-        propertyType,
-        status,
-        timeline,
-        sort,
-      })
+  // // Fetch buyers function - extracted for reuse
+  // const fetchBuyers = async () => {
+  //   setLoading(true)
+  //   try {
+  //     const params = new URLSearchParams({
+  //       page: page.toString(),
+  //       pageSize: "10",
+  //       search: debouncedSearch,
+  //       city,
+  //       propertyType,
+  //       status,
+  //       timeline,
+  //       sort,
+  //     })
 
-      const res = await fetch(`/api/buyers?${params}`)
-      const data = await res.json()
-      setBuyers(data.data)
-      setPagination(data.pagination)
-    } catch (error) {
-      console.error("Failed to fetch buyers:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  //     const res = await fetch(`/api/buyers?${params}`)
+  //     const data = await res.json()
+  //     setBuyers(data.data)
+  //     setPagination(data.pagination)
+  //   } catch (error) {
+  //     console.error("Failed to fetch buyers:", error)
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
 
-  // Fetch buyers whenever filters/page/search/sort change
-  useEffect(() => {
-    fetchBuyers()
-  }, [page, debouncedSearch, city, propertyType, status, timeline, sort])
+  // // Fetch buyers whenever filters/page/search/sort change
+  // useEffect(() => {
+  //   fetchBuyers()
+  // }, [page, debouncedSearch, city, propertyType, status, timeline, sort])
+
+	const fetchBuyers = useCallback(async () => {
+		setLoading(true)
+		try {
+			const params = new URLSearchParams({
+				page: page.toString(),
+				pageSize: "10",
+				search: debouncedSearch,
+				city,
+				propertyType,
+				status,
+				timeline,
+				sort,
+			})
+	
+			const res = await fetch(`/api/buyers?${params}`)
+			const data = await res.json()
+			setBuyers(data.data)
+			setPagination(data.pagination)
+		} catch (error) {
+			console.error("Failed to fetch buyers:", error)
+		} finally {
+			setLoading(false)
+		}
+	}, [page, debouncedSearch, city, propertyType, status, timeline, sort])
+	
+	// Fetch buyers whenever filters/page/search/sort change
+	useEffect(() => {
+		fetchBuyers()
+	}, [fetchBuyers])
 
   // Handle status update
   const handleStatusUpdate = async (buyerId: string, newStatus: string, currentUpdatedAt: string) => {
