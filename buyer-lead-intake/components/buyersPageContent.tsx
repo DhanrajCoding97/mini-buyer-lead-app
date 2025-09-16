@@ -266,13 +266,13 @@ export default function BuyersPageContent() {
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-auto p-1"
+            className="h-auto p-1 min-w-[115px]"
             disabled={isUpdating}
           >
             {isUpdating ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
+              <Loader2 className="h-3 w-3 animate-spin flex items-center justify-center" />
             ) : (
-              <Badge className={`${getStatusColor(buyer.status)} cursor-pointer hover:opacity-80`}>
+              <Badge className={`w-full ${getStatusColor(buyer.status)} cursor-pointer hover:opacity-80 items-start justify-between`}>
                 {buyer.status}
                 <ChevronDown className="h-3 w-3 ml-1" />
               </Badge>

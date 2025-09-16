@@ -138,24 +138,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Rate limiting check
+    // Rate limiting check using the new method
     const clientId = getClientIdentifier(request, user.id);
-    if (createRateLimiter.isRateLimited(clientId)) {
-      const resetTime = createRateLimiter.getResetTime(clientId);
-      const resetTimeSeconds = Math.ceil((resetTime - Date.now()) / 1000);
-      
+    const rateLimit = createRateLimiter.checkRateLimit(clientId);
+    
+    if (!rateLimit.allowed) {
       return NextResponse.json(
         { 
           error: 'Too many requests. Please try again later.',
-          retryAfter: resetTimeSeconds
+          retryAfter: rateLimit.retryAfter
         }, 
         { 
           status: 429,
           headers: {
-            'Retry-After': resetTimeSeconds.toString(),
+            'Retry-After': rateLimit.retryAfter?.toString() || '60',
             'X-RateLimit-Limit': '5',
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': resetTime.toString()
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            'X-RateLimit-Reset': Math.ceil(rateLimit.resetTime / 1000).toString()
           }
         }
       );
@@ -182,15 +181,12 @@ export async function POST(request: NextRequest) {
     });
 
     // Add rate limit headers to successful response
-    const remaining = createRateLimiter.getRemainingRequests(clientId);
-    const resetTime = createRateLimiter.getResetTime(clientId);
-
     return NextResponse.json(newBuyer, { 
       status: 201,
       headers: {
         'X-RateLimit-Limit': '5',
-        'X-RateLimit-Remaining': remaining.toString(),
-        'X-RateLimit-Reset': resetTime.toString()
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': Math.ceil(rateLimit.resetTime / 1000).toString()
       }
     });
   } catch (error) {
