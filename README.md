@@ -82,10 +82,6 @@ Set up environment variables
 
 bashcp .env.example .env.local
 Fill in your environment variables:
-env# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://mjyemcdtwkzctakwpoia.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qeWVtY2R0d2t6Y3Rha3dwb2lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODI3MTUsImV4cCI6MjA3MzI1ODcxNX0.ugaQN4FVjnAgEJk3HMpD6vrMOek8e8eCQGqEwwLjsbY
-DATABASE_URL=postgresql://postgres.mjyemcdtwkzctakwpoia:DS1997shetty@!@aws-1-ap-south-1.pooler.supabase.com:6543/postgres
 
 # Database
 DATABASE_URL=your_supabase_postgres_url
