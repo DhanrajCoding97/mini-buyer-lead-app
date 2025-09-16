@@ -1,7 +1,16 @@
-export default function Home() {
-  return (
-    <div className='flex items-center justify-center min-h-screen'>
-      Hello world
-    </div>
-  );
+// app/page.tsx
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    redirect("/buyers");
+  } else {
+    redirect("/login");
+  }
 }
