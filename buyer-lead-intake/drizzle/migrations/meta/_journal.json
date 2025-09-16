@@ -8,6 +8,13 @@
       "when": 1757769275885,
       "tag": "0000_slimy_quasimodo",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1758015026888,
+      "tag": "0001_chemical_juggernaut",
+      "breakpoints": true
     }
   ]
 }

@@ -3,11 +3,19 @@
 import { db } from '@/lib/db';
 import { buyers, buyerHistory, insertBuyerSchema } from '@/drizzle/schema';
 import { revalidatePath } from 'next/cache';
-import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 
-export async function createBuyer(prevState: any, formData: FormData) {
+type CreateBuyerState =
+  | { success: true; buyerId: string }
+  | { errors: Record<string, string> }
+  | { error: string }
+  | null; // in case no state yet
+
+  export async function createBuyer(
+    prevState: CreateBuyerState,
+    formData: FormData
+  ): Promise<CreateBuyerState> {
 
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -86,7 +94,10 @@ export async function createBuyer(prevState: any, formData: FormData) {
     revalidatePath('/buyers');
     return { success: true, buyerId: newBuyer.id };
   } catch (error) {
+    console.error('Error in createBuyer:', error);
+    
     if (error instanceof z.ZodError) {
+      console.error('Zod validation errors:', error.issues);
       const fieldErrors: Record<string, string> = {};
       error.issues.forEach(issue => {
         if (issue.path[0]) {
@@ -96,6 +107,6 @@ export async function createBuyer(prevState: any, formData: FormData) {
       return { errors: fieldErrors };
     }
     
-    return { error: 'Failed to create buyer' };
+    return { error: `Failed to create buyer: ${error instanceof Error ? error.message : 'Unknown error'}` };
   }
 }

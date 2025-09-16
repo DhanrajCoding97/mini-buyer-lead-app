@@ -172,43 +172,102 @@ export async function PUT(
 //   }
 // }
 
+// export async function DELETE(
+//   request: NextRequest,
+//   context: { params: Promise<{ id: string }> },
+// ) {
+//   try {
+//     const user = await getCurrentUser();
+//     if (!user) {
+//       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+//     }
+
+//     const {id} = await context.params;
+
+//     // Check ownership before deleting
+//     const [currentBuyer] = await db
+//       .select()
+//       .from(buyers)
+//       .where(eq(buyers.id, id))
+//       .limit(1);
+
+//     if (!currentBuyer) {
+//       return NextResponse.json({ error: 'Buyer not found' }, { status: 404 });
+//     }
+
+//     if (currentBuyer.ownerId !== user.id) {
+//       return NextResponse.json({ error: 'You can only delete your own leads' }, { status: 403 });
+//     }
+
+//     const [deletedBuyer] = await db
+//       .delete(buyers)
+//       .where(eq(buyers.id, id))
+//       .returning();
+
+//     return NextResponse.json({
+//       message: 'Buyer deleted successfully',
+//       deletedBuyer,
+//     });
+//   } catch (error) {
+//     return NextResponse.json({ error: 'Failed to delete buyer' }, { status: 500 });
+//   }
+// }
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> },
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const {id} = await context.params;
+    // unwrap params (UUID string)
+    const { id } = await context.params;
+    const buyerId = id;
+
+    if (!buyerId || typeof buyerId !== "string") {
+      return NextResponse.json({ error: "Invalid buyer id" }, { status: 400 });
+    }
 
     // Check ownership before deleting
     const [currentBuyer] = await db
       .select()
       .from(buyers)
-      .where(eq(buyers.id, id))
+      .where(eq(buyers.id, buyerId))
       .limit(1);
 
     if (!currentBuyer) {
-      return NextResponse.json({ error: 'Buyer not found' }, { status: 404 });
+      return NextResponse.json({ error: "Buyer not found" }, { status: 404 });
     }
 
     if (currentBuyer.ownerId !== user.id) {
-      return NextResponse.json({ error: 'You can only delete your own leads' }, { status: 403 });
+      return NextResponse.json(
+        { error: "You can only delete your own leads" },
+        { status: 403 }
+      );
     }
 
+    // --- 🔥 Manual cascade deletes ---
+    // delete related buyer history
+    await db.delete(buyerHistory).where(eq(buyerHistory.buyerId, buyerId));
+
+    // if you have other dependent tables, do the same here
+    // e.g. await db.delete(buyerNotes).where(eq(buyerNotes.buyerId, buyerId));
+
+    // --- finally delete buyer ---
     const [deletedBuyer] = await db
       .delete(buyers)
-      .where(eq(buyers.id, id))
+      .where(eq(buyers.id, buyerId))
       .returning();
 
     return NextResponse.json({
-      message: 'Buyer deleted successfully',
+      message: "Buyer deleted successfully",
       deletedBuyer,
     });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to delete buyer' }, { status: 500 });
+    console.error("DELETE /buyers/[id] error:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

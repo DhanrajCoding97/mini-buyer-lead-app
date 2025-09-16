@@ -1,7 +1,8 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm,UseFormReturn } from "react-hook-form"
+import { useForm } from "react-hook-form"
+import { useState } from "react"
 import {
   Form,
   FormControl,
@@ -20,87 +21,54 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { buyerFormSchema, type BuyerFormValues } from "@/lib/validations/buyer"
+import { buyerFormSchema, newBuyerFormSchema, type BuyerFormValues, type NewBuyerFormValues } from "@/lib/validations/buyer"
 import { useRouter } from "next/navigation"
 
-// interface BuyerFormProps {
-//   mode: "new" | "edit"
-//   onSubmit: (values: BuyerFormValues) => Promise<void>
-//   defaultValues?: Partial<BuyerFormValues>
-//   isSubmitting?: boolean
-// }
+interface BuyerFormProps {
+	mode: "new" | "edit"
+	onSubmit: (values: BuyerFormValues | NewBuyerFormValues) => Promise<void>
+	defaultValues?: Partial<BuyerFormValues>
+	isSubmitting?: boolean
+}
 
-// export const createDefaultBuyerFormValues = (overrides?: Partial<BuyerFormValues>): BuyerFormValues => ({
-//   fullName: "",
-//   email: undefined,
-//   phone: "",
-//   city: "Chandigarh", // Set a reasonable default
-//   propertyType: "Apartment", // Set a reasonable default
-//   bhk: undefined,
-//   purpose: "Buy", // Set a reasonable default
-//   timeline: "0-3m", // Set a reasonable default
-//   source: "Website", // Set a reasonable default
-//   budgetMin: undefined,
-//   budgetMax: undefined,
-//   notes: undefined,
-//   tags: [],
-//   status: "New",
-//   id: undefined,
-//   ownerId: undefined,
-//   updatedAt: undefined,
-//   ...overrides,
-// });
-
-
-// export function BuyerForm({
-//   mode,
-//   onSubmit,
-//   defaultValues,
-//   isSubmitting,
-// }: BuyerFormProps) {
-//   const form = useForm<BuyerFormValues>({
-//     resolver: zodResolver(buyerFormSchema),
-// 		defaultValues: createDefaultBuyerFormValues(defaultValues),
-//   })
-
-	interface BuyerFormProps {
-		mode: "new" | "edit"
-		onSubmit: (values: BuyerFormValues) => Promise<void>
-		defaultValues?: Partial<BuyerFormValues>
-		isSubmitting?: boolean
-	}
-
-	const createDefaultBuyerFormValues = (overrides?: Partial<BuyerFormValues>): BuyerFormValues => ({
-		fullName: "",
-		email: undefined,
-		phone: "",
-		city: "Chandigarh",
-		propertyType: "Apartment", 
-		bhk: undefined,
-		purpose: "Buy",
-		timeline: "0-3m",
-		source: "Website",
-		budgetMin: undefined,
-		budgetMax: undefined,
-		notes: undefined,
-		tags: [],
-		status: "New",
-		id: undefined,
-		ownerId: undefined,
-		updatedAt: undefined,
-		...overrides,
-	});
-	export function BuyerForm({
+const createDefaultBuyerFormValues = (overrides?: Partial<BuyerFormValues>): BuyerFormValues => ({
+	fullName: "",
+	email: undefined,
+	phone: "",
+	city: "Chandigarh",
+	propertyType: "Apartment", 
+	bhk: undefined,
+	purpose: "Buy",
+	timeline: "0-3m",
+	source: "Website",
+	budgetMin: undefined,
+	budgetMax: undefined,
+	notes: "",
+	tags: [],
+	status: "New",
+	id: "",
+	updatedAt: undefined,
+	...overrides,
+});
+export function BuyerForm({
   mode,
   onSubmit,
   defaultValues,
   isSubmitting,
 	}: BuyerFormProps) {
-  // Explicitly type the form without any generics
-  const form: UseFormReturn<BuyerFormValues> = useForm<BuyerFormValues>({
-    resolver: zodResolver(buyerFormSchema),
+  // Use different schemas based on mode
+  const schema = mode === "new" ? newBuyerFormSchema : buyerFormSchema
+  const form = useForm({
+    resolver: zodResolver(schema),
     defaultValues: createDefaultBuyerFormValues(defaultValues),
   })
+
+  const [tagsInput, setTagsInput] = useState("")
+
+  const handleSubmit = async (values: any) => {
+    console.log("BuyerForm handleSubmit called with:", values);
+    await onSubmit(values);
+  }
 
   const router = useRouter()
 
@@ -113,8 +81,10 @@ import { useRouter } from "next/navigation"
         {mode === "new" ? "New Lead Form" : "Edit Lead"}
       </h1>
 
-            <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="bg-white/80 border border-black/20 shadow-lg rounded-lg p-6 flex flex-col gap-2">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit, (errors) => {
+          console.log("Form validation errors:", errors);
+        })} className="bg-white/80 border border-black/20 shadow-lg rounded-lg p-6 flex flex-col gap-2">
           {form.formState.errors.root && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
               {form.formState.errors.root.message}
@@ -148,7 +118,7 @@ import { useRouter } from "next/navigation"
                 <FormItem className="min-w-0"> 
                   <FormLabel className="text-black">Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="email@example.com" {...field} className="w-full" />
+                    <Input type="email" placeholder="email@example.com" {...field} value={field.value || ""} className="w-full" />
                   </FormControl>
                    <div className="min-h-[1.2rem]">
                     <FormMessage />
@@ -271,7 +241,7 @@ import { useRouter } from "next/navigation"
                   <FormLabel className="text-black">
                     BHK {needsBhk && <span className="text-red-800">*</span>}
                   </FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value || undefined}>
                     <FormControl>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select BHK" />
@@ -425,14 +395,20 @@ import { useRouter } from "next/navigation"
                 <FormControl>
                   <Input 
 										placeholder="urgent, vip, callback" 
-										value={field.value?.join(", ") || ""}
+										value={tagsInput || field.value?.join(", ") || ""}
 										onChange={(e) => {
+											const value = e.target.value;
+											setTagsInput(value);
+										}}
+										onBlur={(e) => {
+											// Convert to array when field loses focus
 											const value = e.target.value;
 											const tagsArray = value
 												.split(",")
 												.map(tag => tag.trim())
 												.filter(tag => tag.length > 0);
 											field.onChange(tagsArray);
+											setTagsInput(""); // Clear the input state
 										}}
 									/>
                 </FormControl>
@@ -454,7 +430,7 @@ import { useRouter } from "next/navigation"
           	</Button>
           </div>
         </form>
-        </Form>
+      </Form>
     </div>
   )
 }

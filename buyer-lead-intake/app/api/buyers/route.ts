@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { buyers, insertBuyerSchema } from '@/drizzle/schema';
+import { buyers, insertBuyerSchema, buyerHistory } from '@/drizzle/schema';
 import { eq, like, or, desc, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { createClient } from '@/lib/supabase/server';

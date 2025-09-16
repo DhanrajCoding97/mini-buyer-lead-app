@@ -1,69 +1,3 @@
-// "use client"
- 
-// import { zodResolver } from "@hookform/resolvers/zod"
-// import { useForm } from "react-hook-form"
-// import { z } from "zod"
-// import { Button } from "@/components/ui/button"
-// import {
-//   Form,
-//   FormControl,
-//   FormDescription,
-//   FormField,
-//   FormItem,
-//   FormLabel,
-//   FormMessage,
-// } from "@/components/ui/form"
-// import { Input } from "@/components/ui/input"
-
-// export default function LoginPage() {
-
-// 	const loginFormSchema = z.object({
-// 		email: z.email({
-// 			message: "Invalid email address.",
-// 		}),
-// 	});
-
-// 	const form = useForm<z.infer<typeof loginFormSchema>>({
-//     resolver: zodResolver(loginFormSchema),
-//     defaultValues: {
-//       email: "",
-//     },
-//   })
-
-// 	function onSubmit(values: z.infer<typeof loginFormSchema>) {
-//     // Do something with the form values.
-//     // ✅ This will be type-safe and validated.
-//     console.log(values)
-//   }
-
-// return (
-//   <div className="flex min-h-screen flex-col items-center justify-center py-2">
-//     <Form {...form}>
-//       <form onSubmit={form.handleSubmit(onSubmit)} className="min-h-[250px] min-w-[400px] p-6 flex flex-col items-center justify-center gap-4 border border-black/20 rounded-lg shadow-2xl">
-//         <h1 className="text-xl font-semibold">Sign in with Email</h1>
-//         <FormField
-//           control={form.control}
-//           name="email"
-//           render={({ field }) => (
-//             <FormItem className="w-full">
-//               <FormLabel className="mb-1">Email</FormLabel>
-//               <FormControl>
-//                 <Input placeholder="Enter Email" {...field} />
-//               </FormControl>
-//               <FormMessage />
-//               <FormDescription className="py-2">
-//                 You will receive a magic link to login.
-//               </FormDescription>
-//             </FormItem>
-//           )}
-//         />
-//         <Button type="submit">Submit</Button>
-//       </form>
-//     </Form>
-//   </div>
-//   )
-// }
-
 "use client"
  
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -128,6 +62,7 @@ export default function LoginPage() {
         form.reset()
       }
     } catch (error) {
+      console.error("An unexpected error occurred. Please try again.", error)
       setMessage("An unexpected error occurred. Please try again.")
       setIsSuccess(false)
     } finally {
@@ -191,7 +126,7 @@ export default function LoginPage() {
                 <FormMessage />
                 {!isSuccess && (
                   <FormDescription className="text-gray-500">
-                    We'll send you a magic link to sign in securely.
+                    We&apos;ll send you a magic link to sign in securely.
                   </FormDescription>
                 )}
               </FormItem>
@@ -217,7 +152,7 @@ export default function LoginPage() {
           {isSuccess && (
             <div className="text-center space-y-3">
               <p className="text-sm text-gray-600">
-                Didn't receive the email? Check your spam folder.
+                Didn&apos;t receive the email? Check your spam folder.
               </p>
               <Button 
                 type="button"
